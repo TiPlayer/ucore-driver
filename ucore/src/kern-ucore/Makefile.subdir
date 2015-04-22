@@ -1,0 +1,76 @@
+include $(KCONFIG_AUTOCONFIG)
+
+include Makefile
+
+DEPS := $(addprefix $(OBJPATH)/, $(obj-y:.o=.d))
+BUILTIN_O := $(OBJPATH)/builtin.o
+OBJ_Y := $(addprefix $(OBJPATH)/,$(obj-y))
+
+all: $(OBJPATH) $(BUILTIN_O) $(dirs-y) __modules FORCE
+#modules
+ifneq ($(obj-m),)
+$(obj-m:.o=): $(addprefix $(OBJPATH)/,$(obj-$(obj-m:.o=)))
+	$(Q)mkdir -p $(OBJPATH_ROOT)/modules
+	$(Q)cp $@.dep $(OBJPATH_ROOT)/modules/$@.dep
+	$(Q)$(TARGET_LD) $(TARGET_LDFLAGS) -r -o $(OBJPATH_ROOT)/modules/$@.ko $+
+KERNEL_MODULES +=$(obj-m:.o=)
+endif
+__modules: $(KERNEL_MODULES)
+
+ifneq ($(obj-y),)
+	$(Q)echo $(BUILTIN_O) >> $(BUILTINLIST)
+endif
+
+ifneq ($(obj-y),)
+$(BUILTIN_O): $(OBJ_Y)
+	@echo LD $@
+	$(Q)$(TARGET_LD) $(TARGET_LDFLAGS) -r -o $@ $(OBJ_Y)
+
+-include $(DEPS)
+
+else
+$(BUILTIN_O):
+	$(Q)touch $@
+endif
+
+$(OBJPATH)/%.ko: %.c
+	@echo CC1 $<
+	$(Q)$(TARGET_CC) $(TARGET_CFLAGS) -c -o $@ $<
+
+LINUX_PATH = -I/home/scyue/Desktop/ucore_swap/ucore/src/kern-ucore/kmodule/modules/mod-hello/hello.d
+LINUX_PATH += -I/home/scyue/Desktop/ucore_swap/ucore/src/kern-ucore/kmodule/modules/mod-hello/hello.d/uapi
+
+$(OBJPATH)/%.o: %.c
+	@echo CC2 $<
+	@echo $(LINUX_PATH)
+	$(Q)$(TARGET_CC) $(TARGET_CFLAGS) $(LINUX_PATH) -c -o $@ $<
+
+$(OBJPATH)/%.o: %.S
+	@echo CC3 $<
+	$(Q)$(TARGET_CC) -D__ASSEMBLY__ $(TARGET_CFLAGS) -c -o $@ $<
+
+$(OBJPATH)/%.d: %.c
+	@echo DEP $<
+	@set -e; rm -f $@; \
+		$(TARGET_CC) -MM -MT "$(OBJPATH)/$*.o $@" $(TARGET_CFLAGS) $< > $@;
+
+$(OBJPATH)/%.d: %.S
+	@echo DEP $<
+	@set -e; rm -f $@; \
+		$(TARGET_CC) -MM -MT "$(OBJPATH)/$*.o $@" $(TARGET_CFLAGS) $< > $@;
+
+define make-subdir
+$1: FORCE
+	@echo Enter $(LOCALPATH)/$1
+	-$(Q)mkdir -p $(OBJPATH)/$1
+	+$(Q)$(MAKE) -f $(KTREE)/Makefile.subdir -C $(LOCALPATH)/$1 KTREE=$(KTREE) OBJPATH=$(OBJPATH)/$1 LOCALPATH=$(LOCALPATH)/$1 BUILTINLIST=$(BUILTINLIST)
+endef
+
+$(foreach bdir,$(dirs-y),$(eval $(call make-subdir,$(bdir))))
+
+PHONY +=FORCE
+FORCE:
+
+# Declare the contents of the .PHONY variable as phony.  We keep that
+# information in a variable so we can use it in if_changed and friends.
+.PHONY: $(PHONY)
