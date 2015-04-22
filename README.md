@@ -2,8 +2,9 @@ uCore_plus
 ==========
 
 ##Current Progress
-Working on Linux Driver Support
-PLEASE SEE README.i386 first.
+Working on Linux Driver Support  
+PLEASE SEE README.i386 first.  
+More Information about mod-hello please see readme_driver.md  
 
 ##Quick Try
  1. download or clone ucore plus source code
