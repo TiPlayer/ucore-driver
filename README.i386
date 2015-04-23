@@ -1,18 +1,19 @@
 README for ucore i386 in ubuntu 12.04 x86-64
-
+for ucore driver/kernel module of linux
 -----------------------------
 prerequirement:
 ------------------
-intalll gcc x86-64 and qemu-system-x86_64
+intalll gcc and qemu-system-i386
 
 ------------------
 build
 ------------------
 cd ucore
-make menuconfig ARCH=x86_84
+make menuconfig ARCH=i386  //add swap and sfs, fatfs
 make
 make sfsimg
 make swapimg
+make fatimg
 
 ------------------
 run
