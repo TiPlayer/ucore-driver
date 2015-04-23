@@ -1,6 +1,6 @@
 #uCore plus for Linux Driver
 
-*岳士超*
+岳士超  
 tcplayer.yue@gmail.com  
 
 ----
@@ -10,7 +10,7 @@ tcplayer.yue@gmail.com
 mod-hello 是一个示例kernel module, 它区别于其他uCore的kmodule在于它引用的是linux header，而不是ucore的header
 为了可以正常编译运行， 我们需要如下步骤:   
 
-```cpp
+```
 将hello.c放入header-gen的linux文件夹下
 用header-gen生成所需要的头文件hello.d和hello.dummy.c
 将hello.d和hello.c, hello.dummy.c拖入kmodule/mod-hello下
