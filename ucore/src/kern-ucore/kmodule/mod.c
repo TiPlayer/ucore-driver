@@ -21,6 +21,7 @@
 #include <sched.h>
 #include <swap_manager.h>
 #include <swapfs.h>
+#include <types.h>
 
 #ifndef ARCH_SHF_SMALL
 #define ARCH_SHF_SMALL 0
@@ -978,18 +979,6 @@ int do_init_module(void __user * umod, unsigned long len,
 		return -1;
 	}
 	// TODO: non-preemptive kernel does not need to unlock module mutex
-	struct module test_module;
-	kprintf("Module size: %d\n", sizeof(test_module));
-  kprintf("list: %d\n", (int)&(test_module.list) - (int)&(test_module));
-  kprintf("name: %d\n", (int)&(test_module.name) - (int)&(test_module));
-  kprintf("kernel_symbol: %d\n", (int)&(test_module.syms) - (int)&(test_module));
-  kprintf("num_syms: %d\n",  (int)&(test_module.num_syms) - (int)&(test_module));
-  kprintf("init: %d\n", (int)&(test_module.init) - (int)&(test_module));
-  kprintf("module_init: %d\n", (int)&(test_module.module_init) - (int)&(test_module));
-  kprintf("module_core: %d\n", (int)&(test_module.module_core) - (int)&(test_module));
-  kprintf("symtab: %d\n", (int)&(test_module.symtab) - (int)&(test_module));
-  kprintf("percpu: %d\n", (int)&(test_module.percpu) - (int)&(test_module));
-  kprintf("exit: %d\n", (int)&(test_module.exit) - (int)&(test_module));
 	if (mod->init != NULL) {
 		ret = (*mod->init) ();
 	}

@@ -287,8 +287,6 @@ struct inodes_stat_t {
 #define SYNC_FILE_RANGE_WRITE		2
 #define SYNC_FILE_RANGE_WAIT_AFTER	4
 
-#ifdef __KERNEL__
-
 #include <linux/linkage.h>
 #include <linux/wait.h>
 #include <linux/types.h>
@@ -2333,5 +2331,4 @@ int proc_nr_files(struct ctl_table *table, int write, struct file *filp,
 
 int get_filesystem_list(char *buf);
 
-#endif /* __KERNEL__ */
 #endif /* _LINUX_FS_H */

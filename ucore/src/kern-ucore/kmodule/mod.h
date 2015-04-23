@@ -274,6 +274,7 @@ int lookup_module_symbol_attrs_(unsigned long addr, unsigned long *size,
 				unsigned long *offset, char *modname,
 				char *name);
 
+
 const struct exception_table_entry *search_module_extables_(unsigned long addr);
 
 extern void print_modules(void);

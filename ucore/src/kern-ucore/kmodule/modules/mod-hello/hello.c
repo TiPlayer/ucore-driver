@@ -1,11 +1,14 @@
 /*  Kernel Programming */
-#include <autoconf.h>
-#include <string.h>
+#include <linux/kconfig.h>
 #include <linux/module.h>	// Needed by all modules
 #include <linux/kernel.h>	// Needed for KERN_ALERT
 #include <linux/init.h>		// Needed for the macros
 #include <linux/device.h>
 #include <linux/kobject.h>
+#include <linux/types.h>
+
+#define __NO_UCORE_TYPE__
+#include <string.h>
 
 struct test_device_driver {
   char *name;

@@ -58,3 +58,4 @@ int kprintf(const char *fmt, ...)
 }
 
 EXPORT_SYMBOL(kprintf);
+EXPORT_SYMBOL(vkprintf);

@@ -29,7 +29,11 @@ struct iobuf;
  * vfs_open() and vfs_close(). Code above the VFS layer should not
  * need to worry about it.
  */
+#ifdef __NO_UCORE_TYPE__
+struct ucore_inode {
+#else
 struct inode {
+#endif
 	union {
 		struct device __device_info;
 		struct pipe_root __pipe_root_info;

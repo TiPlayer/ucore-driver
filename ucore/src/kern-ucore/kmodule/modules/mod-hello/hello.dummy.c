@@ -1,8 +1,9 @@
 #include <autoconf.h>
-#include <string.h>
 #include <linux/device.h>
 #include <linux/printk.h>
 
+#define __NO_UCORE_TYPE__
+#include <string.h>
 
 #define DDE_WEAK __attribute__((weak))
 

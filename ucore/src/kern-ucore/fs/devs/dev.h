@@ -24,11 +24,10 @@ struct device {
 	size_t d_blocks;
 	size_t d_blocksize;
 	/* for Linux */
-	/* 
-	   unsigned long i_rdev;
-	   mode_t i_mode;
-	   const struct file_operations *i_fops; 
-	 */
+  unsigned long i_rdev;
+  mode_t i_mode;
+  const struct file_operations *i_fops;
+
 	void *linux_file;
 	void *linux_dentry;
 

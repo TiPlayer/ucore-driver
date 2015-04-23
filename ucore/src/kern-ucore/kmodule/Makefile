@@ -1,2 +1,2 @@
 obj-y := mod.o
-dirs-y :=modules
+dirs-y :=modules linuxAdapter
