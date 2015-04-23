@@ -37,7 +37,7 @@ static int demo_init(void) {
 	cdev_init(&chr_dev, &chr_ops); //initialize the device instance
   ret = alloc_chrdev_region(&ndev, 0, 1, "chr_dev"); //allocate the device node number dynamically
 	if(ret < 0) return ret;
-	printk("demo_init():major=%d, minor=%d\n", MAJOR(ndev), MINOR(ndev));
+  printk("demo_init():major=%d, minor=%d\n", MAJOR(ndev), MINOR(ndev));
   ret = cdev_add(&chr_dev, ndev, 1);//register the char_dev into the system
 	if(ret < 0) return ret;
 	return 0;

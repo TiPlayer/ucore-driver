@@ -63,14 +63,15 @@ int sysfile_read(int fd, void *base, size_t len)
 	if (!file_testfd(fd, 1, 0)) {
 		return -E_INVAL;
 	}
-	/* for linux inode */
-	if (__is_linux_devfile(fd)) {
-		size_t alen = 0;
-		ret = linux_devfile_read(fd, base, len, &alen);
-		if (ret)
-			return ret;
-		return alen;
-	}
+//	/* Actually We don't need this */
+//	if (__is_linux_devfile(fd)) {
+//    kprintf("Something wrong here\n");
+//		size_t alen = 0;
+//		ret = linux_devfile_read(fd, base, len, &alen);
+//		if (ret)
+//			return ret;
+//		return alen;
+//	}
 	void *buffer;
 	if ((buffer = kmalloc(IOBUF_SIZE)) == NULL) {
 		return -E_NO_MEM;

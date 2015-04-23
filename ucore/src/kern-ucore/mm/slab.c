@@ -1,3 +1,4 @@
+#include "mod.h"
 #include <types.h>
 #include <list.h>
 #include <memlayout.h>
@@ -10,6 +11,7 @@
 #include <kio.h>
 #include <mp.h>
 #include <spinlock.h>
+#include <mod.h>
 
 /* The slab allocator used in ucore is based on an algorithm first introduced by 
    Jeff Bonwick for the SunOS operating system. The paper can be download from 
@@ -418,6 +420,8 @@ void *kmalloc(size_t size)
 	return kmem_cache_alloc(slab_cache + (order - MIN_SIZE_ORDER));
 }
 
+EXPORT_SYMBOL(kmalloc);
+
 static void kmem_cache_free(kmem_cache_t * cachep, void *obj);
 
 // kmem_slab_destroy - call free_pages & kmem_cache_free to free a slab 
@@ -487,14 +491,15 @@ static void kmem_cache_free(kmem_cache_t * cachep, void *objp)
 }
 
 // kfree - simple interface used by ooutside functions to free an obj
-void kfree(void *objp)
-{
+void kfree(void *objp)  {
 	//Fix by chenyh
 	//according to Linux "If @objp is NULL, no operation is performed."
 	if (!objp)
 		return;
 	kmem_cache_free(GET_PAGE_CACHE(kva2page(objp)), objp);
 }
+
+EXPORT_SYMBOL(kfree);
 
 static inline void check_slab_empty(void)
 {

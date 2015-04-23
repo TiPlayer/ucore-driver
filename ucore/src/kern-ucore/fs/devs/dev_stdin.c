@@ -75,8 +75,7 @@ try_again:
 	return ret;
 }
 
-static int stdin_open(struct device *dev, uint32_t open_flags)
-{
+static int stdin_open(struct device *dev, uint32_t open_flags) {
 	if (open_flags != O_RDONLY) {
 		return -E_INVAL;
 	}
@@ -88,8 +87,7 @@ static int stdin_close(struct device *dev)
 	return 0;
 }
 
-static int stdin_io(struct device *dev, struct iobuf *iob, bool write)
-{
+static int stdin_io(struct device *dev, struct iobuf *iob, bool write)  {
 	if (!write) {
 		int ret;
 		if ((ret = dev_stdin_read(iob->io_base, iob->io_resid)) > 0) {
@@ -100,8 +98,7 @@ static int stdin_io(struct device *dev, struct iobuf *iob, bool write)
 	return -E_INVAL;
 }
 
-static int stdin_ioctl(struct device *dev, int op, void *data)
-{
+static int stdin_ioctl(struct device *dev, int op, void *data) {
 	return -E_INVAL;
 }
 

@@ -10,9 +10,11 @@
 #include <stat.h>
 #include <dirent.h>
 #include <error.h>
+#include <inode.h>
 #include <assert.h>
 
 #include <vmm.h>
+#include "fs.h"
 
 #define testfd(fd)                          ((fd) >= 0 && (fd) < FS_STRUCT_NENTRY)
 
@@ -91,6 +93,8 @@ void filemap_open(struct file *file)
 	       && file->node != NULL);
 	file->status = FD_OPENED;
 	fopen_count_inc(file);
+//  kprintf("current:%d,file:%d,count:%d, name:%s filemap_open\n", current->pid, file->fd, file->open_count, file->node->in_info.__device_info.d_name);
+
 }
 
 void filemap_close(struct file *file)
@@ -99,6 +103,7 @@ void filemap_close(struct file *file)
 	assert(fopen_count(file) > 0);
 	file->status = FD_CLOSED;
 	if (fopen_count_dec(file) == 0) {
+//    kprintf("current:%d,file:%d,count:%d, name:%s filemap_close\n", current->pid, file->fd, file->open_count, file->node->in_info.__device_info.d_name);
 		filemap_free(file);
 	}
 }

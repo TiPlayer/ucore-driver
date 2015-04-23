@@ -1,2 +1,2 @@
 obj-m := mod-demo.o
-obj-mod-demo:= demo.o demo.dummy.o
+obj-mod-demo:= demo.o

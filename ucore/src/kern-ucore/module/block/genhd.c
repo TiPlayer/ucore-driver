@@ -242,8 +242,7 @@ static struct blk_major_name {
 } *major_names[BLKDEV_MAJOR_HASH_SIZE];
 
 /* index in the above - for now: assume no multimajor ranges */
-static inline int major_to_index(int major)
-{
+static inline int major_to_index(int major)  {
 	return major % BLKDEV_MAJOR_HASH_SIZE;
 }
 
