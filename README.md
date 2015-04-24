@@ -3,6 +3,7 @@ uCore_plus
 
 ##Current Progress
 Working on Linux Driver Support
+PLEASE SEE README.i386 first.
 
 ##Quick Try
  1. download or clone ucore plus source code

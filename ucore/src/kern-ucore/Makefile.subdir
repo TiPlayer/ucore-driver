@@ -37,8 +37,9 @@ $(OBJPATH)/%.ko: %.c
 	@echo CC1 $<
 	$(Q)$(TARGET_CC) $(TARGET_CFLAGS) -c -o $@ $<
 
-LINUX_PATH = -I/home/scyue/Desktop/ucore_swap/ucore/src/kern-ucore/kmodule/modules/mod-hello/hello.d
-LINUX_PATH += -I/home/scyue/Desktop/ucore_swap/ucore/src/kern-ucore/kmodule/modules/mod-hello/hello.d/uapi
+#should change for your linux path
+LINUX_PATH = -I$(TOPDIR)/src/kern-ucore/kmodule/modules/mod-hello/hello.d
+LINUX_PATH += -I$(TOPDIR)/src/kern-ucore/kmodule/modules/mod-hello/hello.d/uapi
 
 $(OBJPATH)/%.o: %.c
 	@echo CC2 $<
