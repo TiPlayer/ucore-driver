@@ -38,8 +38,7 @@ int kern_init(void)
 	debug_init();		// init debug registers
 	pmm_init();		// init physical memory management
 	pmm_init_ap();
-
-	pic_init();		// init interrupt controller
+  pic_init();		// init interrupt controller
 	idt_init();		// init interrupt descriptor table
 
 	vmm_init();		// init virtual memory management
@@ -48,15 +47,15 @@ int kern_init(void)
 	sync_init();		// init sync struct
 
 	ide_init();		// init ide devices
+  kprintf("after ide init\n");
+  liv_init();
 #ifdef UCONFIG_SWAP
 	swap_manager_init();	// init swap
 #endif
 	fs_init();		// init fs
-
   clock_init();		// init clock interrupt
 	mod_init();
-
-	intr_enable();		// enable irq interrupt
+  intr_enable();		// enable irq interrupt
 
 	/* do nothing */
 	cpu_idle();		// run idle process

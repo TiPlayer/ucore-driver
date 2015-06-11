@@ -2,7 +2,8 @@
 #include <mmu.h>
 #include <memlayout.h>
 #include <clock.h>
-#include <trap.h>
+#include "trap.h"
+#include <slab.h>
 #include <arch.h>
 #include <stdio.h>
 #include <kdebug.h>
@@ -27,8 +28,10 @@ static struct pseudodesc idt_pd = {
 	sizeof(idt) - 1, (uintptr_t) idt
 };
 
-void idt_init(void)
-{
+static liv_t gliv;
+static int liv_init_bool = 0;
+
+void idt_init(void) {
 	extern uintptr_t __vectors[];
 	int i;
 	for (i = 0; i < sizeof(idt) / sizeof(struct gatedesc); i++) {
@@ -38,8 +41,33 @@ void idt_init(void)
 	lidt(&idt_pd);
 }
 
-static const char *trapname(int trapno)
-{
+int register_all_sys_intr_func();
+void liv_init() {
+  kprintf("before liv_init!\n");
+  int i = 0;
+  for (i = 0; i < MAX_LOGIC_INTR_NUMBER; i++) {
+    gliv.handler_vector[i] = NULL;
+  }
+  for (i = 0; i < MAX_PHY_INTR_NUMBER; i++) {
+    gliv.p2l_map[i] = -1;
+  }
+  register_all_sys_intr_func();
+  kprintf("liv_init finish!\n");
+  liv_init_bool = 1;
+  for (i = 0; i < MAX_LOGIC_INTR_NUMBER; i++) {
+    if (gliv.handler_vector[i] != NULL) {
+      kprintf("Init: %d\n", i);
+      ih_t* handler = gliv.handler_vector[i];
+      while (handler != NULL) {
+        kprintf("func:%p\n", handler->func);
+        handler = handler->next;
+      }
+    }
+  }
+}
+
+
+static const char *trapname(int trapno) {
 	static const char *const excnames[] = {
 		"Divide error",
 		"Debug",
@@ -156,10 +184,62 @@ static int pgfault_handler(struct trapframe *tf)
 	return do_pgfault(mm, tf->tf_err, rcr2());
 }
 
-static void trap_dispatch(struct trapframe *tf)
-{
-	char c;
+static bool try_dispatch_with_logic(ih_t* handler, struct trapframe* tf) {
+  while (handler != NULL && handler->func != NULL) {
+    if(handler->func(tf) == INTR_MINE_AND_SUCCESS) {
+//      kprintf("Success: %p\n", handler->func);
+      return 1;
+    }
+    handler = handler->next;
+  }
+  return 0;
+}
 
+int register_intr_handler(if_t func, int logic_no) {
+  ih_t* handler = kmalloc(sizeof(ih_t));
+  handler->func = func;
+  handler->next = NULL;
+  ih_t* end = gliv.handler_vector[logic_no];
+  if (end == NULL) {
+    gliv.handler_vector[logic_no] = handler;
+  } else {
+    while (end->next != NULL) end = end->next;
+    end->next = handler;
+  }
+  return 0;
+}
+static void trap_dispatch(struct trapframe *tf);
+int panic_intr_func(struct trapframe* tf);
+static void trap_dispatch_logic(struct trapframe *tf) {
+  if (!liv_init_bool) {
+    trap_dispatch(tf);
+    return;
+  }
+  int phy_intr_no = tf->tf_trapno;
+//  kprintf("physics: %d\n", phy_intr_no);
+  if (gliv.p2l_map[phy_intr_no] == -1) {
+    int i;
+    for (i = 0; i < MAX_LOGIC_INTR_NUMBER; ++i) {
+      if (try_dispatch_with_logic(gliv.handler_vector[i], tf)) {
+        gliv.p2l_map[phy_intr_no] = i;
+        kprintf("find: %d -> %d\n", phy_intr_no, i);
+        break;
+      }
+    }
+    if (i == MAX_LOGIC_INTR_NUMBER) {
+      kprintf("Before panic\n");
+      panic_intr_func(tf);
+    }
+  } else {
+    if (!try_dispatch_with_logic(gliv.handler_vector[gliv.p2l_map[phy_intr_no]], tf)) {
+      panic_intr_func(tf);
+    }
+  }
+}
+
+
+static void trap_dispatch(struct trapframe *tf) {
+	char c;
 	int ret;
 	switch (tf->tf_trapno) {
 	case T_DEBUG:
@@ -214,7 +294,7 @@ void trap(struct trapframe *tf)
 {
 	// used for previous projects
 	if (current == NULL) {
-		trap_dispatch(tf);
+		trap_dispatch_logic(tf);
 	} else {
 		// keep a trapframe chain in stack
 		struct trapframe *otf = current->tf;
@@ -222,7 +302,7 @@ void trap(struct trapframe *tf)
 
 		bool in_kernel = trap_in_kernel(tf);
 
-		trap_dispatch(tf);
+    trap_dispatch_logic(tf);
 
 		current->tf = otf;
 		if (!in_kernel) {
@@ -234,7 +314,106 @@ void trap(struct trapframe *tf)
 	}
 }
 
-int ucore_in_interrupt()
-{
+int ucore_in_interrupt() {
 	return 0;
+}
+
+int debug_intr_func(struct trapframe* tf) {
+  if (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT) {
+    debug_monitor(tf);
+    return INTR_MINE_AND_SUCCESS;
+  } else {
+    return INTR_RETURN_NOT_MINE;
+  }
+}
+
+
+int page_fault_intr_func(struct trapframe* tf) {
+  int ret;
+  if (tf->tf_trapno == T_PGFLT) {
+    if ((ret = pgfault_handler(tf)) != 0) {
+      print_trapframe(tf);
+      if (current == NULL) {
+        panic("handle pgfault failed. %e\n", ret);
+      } else {
+        if (trap_in_kernel(tf)) {
+          panic
+          ("handle pgfault failed in kernel mode. %e\n", ret);
+        }
+        kprintf("killed by kernel.\n");
+        do_exit(-E_KILLED);
+      }
+    }
+    return INTR_MINE_AND_SUCCESS;
+  } else {
+    return INTR_RETURN_NOT_MINE;
+  }
+}
+
+int syscall_intr_func(struct trapframe* tf) {
+  if (tf->tf_trapno == T_SYSCALL) {
+//    kprintf("No: %d\n", tf->tf_trapno);
+    syscall();
+    return INTR_MINE_AND_SUCCESS;
+  } else {
+    return INTR_MINE_AND_FAIL;
+  }
+}
+
+int timer_intr_func(struct trapframe* tf) {
+  if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER) {
+    ticks++;
+    assert(current != NULL);
+    run_timer_list();
+    return INTR_MINE_AND_SUCCESS;
+  } else {
+    return INTR_MINE_AND_FAIL;
+  }
+}
+int kbd_intr_func(struct trapframe* tf) {
+  char c;
+  if (tf->tf_trapno == IRQ_OFFSET + IRQ_COM1 || tf->tf_trapno == IRQ_OFFSET + IRQ_KBD) {
+    c = cons_getc();
+    extern void dev_stdin_write(char c);
+    dev_stdin_write(c);
+    return INTR_MINE_AND_SUCCESS;
+  } else {
+    return INTR_MINE_AND_FAIL;
+  }
+}
+int ide_intr_func(struct trapframe* tf) {
+  if (tf->tf_trapno == IRQ_OFFSET + IRQ_IDE1 || tf->tf_trapno == IRQ_OFFSET + IRQ_IDE2) {
+    return INTR_MINE_AND_SUCCESS;
+  } else {
+    return INTR_MINE_AND_FAIL;
+  }
+}
+int panic_intr_func(struct trapframe* tf) {
+  if (tf->tf_trapno == 256) {
+    print_trapframe(tf);
+    if (current != NULL) {
+      kprintf("unhandled trap.\n");
+      do_exit(-E_KILLED);
+    }
+    panic("unexpected trap in kernel.\n");
+    return INTR_MINE_AND_SUCCESS;
+  } else {
+    return INTR_MINE_AND_FAIL;
+  }
+}
+
+int register_all_sys_intr_func() {
+  register_intr_handler(debug_intr_func, 20);
+  kprintf("add:%s, %p\n", "debug", debug_intr_func);
+  register_intr_handler(page_fault_intr_func, 20);
+  kprintf("add:%s, %p\n", "pf", page_fault_intr_func);
+  register_intr_handler(syscall_intr_func, 20);
+  kprintf("add:%s, %p\n", "syscall", syscall_intr_func);
+  register_intr_handler(timer_intr_func, 20);
+  kprintf("add:%s, %p\n", "timer", timer_intr_func);
+  register_intr_handler(kbd_intr_func, 20);
+  kprintf("add:%s, %p\n", "kbd", kbd_intr_func);
+  register_intr_handler(ide_intr_func, 20);
+  kprintf("add:%s, %p\n", "ide", ide_intr_func);
+  return 0;
 }

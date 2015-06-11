@@ -69,14 +69,32 @@ struct trapframe {
 	uint16_t tf_padding4;
 } __attribute__ ((packed));
 
-typedef int(*intr_handler)(struct trapframe*);
+typedef int(*interrupt_func)(struct trapframe*);
 
-#define INTR_MINE_AND_SUCCESS 0
-#define INTR_MINE_AND_FAIL 1
+#define INTR_MINE_AND_FAIL 0
+#define INTR_MINE_AND_SUCCESS 1
 #define INTR_RETURN_NOT_MINE 2
 
+struct interrupt_handler {
+  interrupt_func func;
+  struct interrupt_handler* next;
+};
 
 
+#define MAX_LOGIC_INTR_NUMBER 256
+#define MAX_PHY_INTR_NUMBER 256
+struct logic_interrupt_vector {
+  struct interrupt_handler* handler_vector[MAX_LOGIC_INTR_NUMBER];
+  int p2l_map[MAX_PHY_INTR_NUMBER];
+};
+
+typedef struct logic_interrupt_vector liv_t;
+typedef struct interrupt_handler ih_t;
+typedef interrupt_func if_t;
+
+int register_intr_handler(if_t func, int logic_no);
+
+void liv_init();
 void idt_init(void);
 void print_trapframe(struct trapframe *tf);
 void print_regs(struct pushregs *regs);
