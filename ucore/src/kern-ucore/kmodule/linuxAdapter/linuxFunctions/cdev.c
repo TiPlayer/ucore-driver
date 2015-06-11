@@ -123,7 +123,7 @@ int alloc_chrdev_region(dev_t * dev, unsigned int baseminor, unsigned int count,
 
 struct ucore_iobuf {
   void *io_base;		/* The base addr of object       */
-  off_t io_offset;	/* Desired offset into object    */
+  loff_t io_offset;	/* Desired offset into object    */
   size_t io_len;		/* The lenght of Data            */
   size_t io_resid;	/* Remaining amt of data to xfer */
 };
@@ -137,10 +137,11 @@ int ucore_cdev_close_adapter (struct ucore_device * dev) {
   return dev->i_fops->release(NULL, NULL);
 }
 int ucore_cdev_io_adapter (struct ucore_device * dev, struct ucore_iobuf * iob, bool write) {
+  printk("io_offset = %p\n", &(iob->io_offset));
   if (write) {
-    return (int)dev->i_fops->write(NULL, iob->io_base, iob->io_len, (loff_t *)&(iob->io_offset));
+    return (int)dev->i_fops->write(NULL, iob->io_base, iob->io_len, &(iob->io_offset));
   } else {
-    return (int)dev->i_fops->read(NULL, iob->io_base, iob->io_len, (loff_t *)&(iob->io_offset));
+    return (int)dev->i_fops->read(NULL, iob->io_base, iob->io_len, &(iob->io_offset));
   }
 }
 int ucore_cdev_ioctl_adapter (struct ucore_device * dev, int op, void *data) {
@@ -186,10 +187,6 @@ void cdev_init(struct cdev * cdev, const struct file_operations * fops) {
   // kobject_init(&cdev->kobj, &ktype_cdev_default);
   cdev->ops = fops;
 }
-
-
-
-
 
 static struct char_device_struct *
 __unregister_chrdev_region(unsigned major, unsigned baseminor, int minorct) {

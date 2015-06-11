@@ -19,8 +19,7 @@
 #include <vmm.h>
 #include <proc.h>
 
-unsigned long __ucore_copy_to_user(void *to, const void *from, unsigned long n)
-{
+unsigned long __ucore_copy_to_user(void *to, const void *from, unsigned long n)  {
 	int ret = 0;
 	struct mm_struct *mm = current->mm;
 	lock_mm(mm);

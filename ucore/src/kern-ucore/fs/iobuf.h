@@ -11,7 +11,7 @@
 
 struct iobuf {
 	void *io_base;		/* The base addr of object       */
-	off_t io_offset;	/* Desired offset into object    */
+  loff_t io_offset;	/* Desired offset into object    */
 	size_t io_len;		/* The lenght of Data            */
 	size_t io_resid;	/* Remaining amt of data to xfer */
 };

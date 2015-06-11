@@ -4,6 +4,10 @@
 #include <linux/preempt.h>
 #include <asm/uaccess.h>
 
+
+
+
+
 /*
  * These routines enable/disable the pagefault handler in that
  * it will not take any locks and go straight to the fixup table.
@@ -108,5 +112,8 @@ extern long probe_kernel_read(void *dst, void *src, size_t size);
  * happens, handle that and return -EFAULT.
  */
 extern long probe_kernel_write(void *dst, void *src, size_t size);
+
+
+
 
 #endif /* __LINUX_UACCESS_H__ */

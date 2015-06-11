@@ -14,7 +14,7 @@
 #include <proc.h>
 #include <sched.h>
 #include <kio.h>
-#include <mp.h>
+#include <arch_mp.h>
 #include <mod.h>
 #include <swap_manager.h>
 
@@ -33,7 +33,7 @@ int kern_init(void)
 	print_kerninfo();
 
 	/* Only to initialize lcpu_count. */
-	mp_init();
+  mp_init();
 
 	debug_init();		// init debug registers
 	pmm_init();		// init physical memory management
@@ -53,7 +53,7 @@ int kern_init(void)
 #endif
 	fs_init();		// init fs
 
-	clock_init();		// init clock interrupt
+  clock_init();		// init clock interrupt
 	mod_init();
 
 	intr_enable();		// enable irq interrupt

@@ -3,9 +3,13 @@
 #include <linux/kernel.h>
 #include <linux/fs.h>
 #include <linux/cdev.h>
+#include <linux/printk.h>
+#include <linux/uaccess.h>
 
 static struct cdev chr_dev; //An instance of a character device
 static dev_t ndev; //The node of the device
+
+static uint8_t demo_buffer[256];
 
 static int chr_open(struct inode *nd, struct file *filp) {
 	int major = MAJOR(nd->i_rdev);
@@ -19,6 +23,30 @@ static ssize_t chr_read(struct file *filp, char __user *u, size_t sz, loff_t *of
 	return 0;
 }
 
+static ssize_t chr_write(struct file *filp, const char __user *u, size_t sz, loff_t *off) {
+  printk("In the chr_write() function!\n");
+  printk("u: %p, sz: %d, off:%ld\n", u, sz, *off);
+  int result;
+  loff_t pos = *off; //pos: offset
+
+  if (pos >= 256) {
+    result = 0;
+    goto out;
+  }
+  if (sz > (256 - pos))
+    sz = 256 - pos;
+  pos += sz;
+
+  if (copy_from_user(demo_buffer + *off, u, sz)) {
+    sz = -EFAULT;
+    goto out;
+  }
+  printk("demo: %s", demo_buffer + *off);
+  *off = pos;
+out:
+  return sz;
+}
+
 static int chr_release(struct inode *nd, struct file *filp) {
 	printk("In the chr_release() function!\n");
 	return 0;       
@@ -29,6 +57,7 @@ struct file_operations chr_ops = {
     .owner = THIS_MODULE,
     .open = chr_open,
     .read = chr_read,
+    .write = chr_write,
     .release = chr_release,
 };
 // initialization function of the module

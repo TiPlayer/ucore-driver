@@ -12,9 +12,9 @@
 #include <error.h>
 #include <inode.h>
 #include <assert.h>
-
+#include <kio.h>
 #include <vmm.h>
-#include "fs.h"
+#include <fs.h>
 
 #define testfd(fd)                          ((fd) >= 0 && (fd) < FS_STRUCT_NENTRY)
 
@@ -270,6 +270,7 @@ int file_write(int fd, void *base, size_t len, size_t * copied_store)
 		return -E_INVAL;
 	}
 	filemap_acquire(file);
+
 
 	struct iobuf __iob, *iob = iobuf_init(&__iob, base, len, file->pos);
 	ret = vop_write(file->node, iob);

@@ -69,6 +69,14 @@ struct trapframe {
 	uint16_t tf_padding4;
 } __attribute__ ((packed));
 
+typedef int(*intr_handler)(struct trapframe*);
+
+#define INTR_MINE_AND_SUCCESS 0
+#define INTR_MINE_AND_FAIL 1
+#define INTR_RETURN_NOT_MINE 2
+
+
+
 void idt_init(void);
 void print_trapframe(struct trapframe *tf);
 void print_regs(struct pushregs *regs);

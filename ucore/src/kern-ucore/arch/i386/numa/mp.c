@@ -18,13 +18,11 @@ DEFINE_PERCPU_NOINIT(struct cpu, cpus);
 #define mp_debug(a ...)
 #endif
 
-int mp_init(void)
-{
+int mp_init(void) {
 	sysconf.lcpu_boot = 0;
 	sysconf.lnuma_count = 0;
 	sysconf.lcpu_count = 1;
 	percpu_offsets[0] = __percpu_start;
-
 	return 0;
 }
 

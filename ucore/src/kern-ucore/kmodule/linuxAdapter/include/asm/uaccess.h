@@ -265,6 +265,7 @@ extern void __cmpxchg_wrong_size(void)
 	__compiletime_error("Bad argument size for cmpxchg");
 
 # include <asm/uaccess_64.h>
+#import "uaccess_glue.h"
 
 unsigned long __must_check _copy_from_user(void *to, const void __user *from,
 					   unsigned n);
@@ -288,58 +289,6 @@ __copy_from_user_overflow(int size, unsigned long count)
 
 #define __copy_to_user_overflow __copy_from_user_overflow
 
-static inline unsigned long __must_check
-copy_from_user(void *to, const void __user *from, unsigned long n)
-{
-	int sz = __compiletime_object_size(to);
-
-	might_fault();
-
-	/*
-	 * While we would like to have the compiler do the checking for us
-	 * even in the non-constant size case, any false positives there are
-	 * a problem (especially when DEBUG_STRICT_USER_COPY_CHECKS, but even
-	 * without - the [hopefully] dangerous looking nature of the warning
-	 * would make people go look at the respecitive call sites over and
-	 * over again just to find that there's no problem).
-	 *
-	 * And there are cases where it's just not realistic for the compiler
-	 * to prove the count to be in range. For example when multiple call
-	 * sites of a helper function - perhaps in different source files -
-	 * all doing proper range checking, yet the helper function not doing
-	 * so again.
-	 *
-	 * Therefore limit the compile time checking to the constant size
-	 * case, and do only runtime checking for non-constant sizes.
-	 */
-
-	if (likely(sz < 0 || sz >= n))
-		n = _copy_from_user(to, from, n);
-	else if(__builtin_constant_p(n))
-		copy_from_user_overflow();
-	else
-		__copy_from_user_overflow(sz, n);
-
-	return n;
-}
-
-static inline unsigned long __must_check
-copy_to_user(void __user *to, const void *from, unsigned long n)
-{
-	int sz = __compiletime_object_size(from);
-
-	might_fault();
-
-	/* See the comment in copy_from_user() above. */
-	if (likely(sz < 0 || sz >= n))
-		n = _copy_to_user(to, from, n);
-	else if(__builtin_constant_p(n))
-		copy_to_user_overflow();
-	else
-		__copy_to_user_overflow(sz, n);
-
-	return n;
-}
 
 #undef __copy_to_user_overflow
 

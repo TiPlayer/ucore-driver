@@ -13,6 +13,7 @@
 #include <error.h>
 #include <assert.h>
 #include <mod.h>
+#include <vmm.h>
 
 int printk(const char * fmt, ...) {
 	va_list ap;
@@ -50,3 +51,28 @@ void addLinuxDevice(struct device* dev) {
   }
 }
 EXPORT_SYMBOL(addLinuxDevice);
+
+
+unsigned long __ucore_copy_to_user(void *to, const void *from, unsigned long n)  {
+  int ret = 0;
+  struct mm_struct *mm = current->mm;
+  lock_mm(mm);
+  ret = copy_to_user(mm, to, from, n);
+  unlock_mm(mm);
+  if (ret)
+    return 0;
+  return n;
+}
+EXPORT_SYMBOL(__ucore_copy_to_user);
+
+unsigned long __ucore_copy_from_user(void *to, const void *from, unsigned long n) {
+  int ret = 0;
+  struct mm_struct *mm = current->mm;
+  lock_mm(mm);
+  ret = copy_from_user(mm, to, from, n, 0);
+  unlock_mm(mm);
+  if (ret)
+    return 0;
+  return n;
+}
+EXPORT_SYMBOL(__ucore_copy_from_user);

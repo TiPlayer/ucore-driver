@@ -60,6 +60,8 @@ typedef uintptr_t size_t;
 /* off_t is used for file offsets and lengths */
 typedef intptr_t off_t;
 
+typedef long long loff_t;
+
 /* ppn_t used for page numbers */
 typedef size_t ppn_t;
 

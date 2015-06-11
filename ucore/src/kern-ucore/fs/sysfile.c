@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <error.h>
 #include <assert.h>
+#include <kio.h>
 
 #define IOBUF_SIZE                          4096
 
@@ -60,6 +61,7 @@ int sysfile_read(int fd, void *base, size_t len)
 	if (len == 0) {
 		return 0;
 	}
+
 	if (!file_testfd(fd, 1, 0)) {
 		return -E_INVAL;
 	}
@@ -111,6 +113,7 @@ out:
 
 int sysfile_write(int fd, void *base, size_t len)
 {
+  if (fd == 3) kprintf("base = %p\n", base);
 	int ret = 0;
 	struct mm_struct *mm = current->mm;
 	if (len == 0) {
@@ -121,13 +124,8 @@ int sysfile_write(int fd, void *base, size_t len)
 	}
 	/* for linux inode */
 	if (__is_linux_devfile(fd)) {
-		/* use 8byte int, in case of 64bit off_t
-		 * config in linux kernel */
-		size_t alen = 0;
-		ret = linux_devfile_write(fd, base, len, &alen);
-		if (ret)
-			return ret;
-		return alen;
+    size_t alen = len;
+    return file_write(fd, base, alen, &alen);
 	}
 	void *buffer;
 	if ((buffer = kmalloc(IOBUF_SIZE)) == NULL) {

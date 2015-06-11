@@ -236,7 +236,11 @@ static uint32_t sys_write(uint32_t arg[])
 {
 	int fd = (int)arg[0];
 	void *base = (void *)arg[1];
-	size_t len = (size_t) arg[2];
+	size_t len = (size_t)arg[2];
+//  if (fd == 3) {
+//    kprintf("len = %d\n", len);
+//  }
+
 	return sysfile_write(fd, base, len);
 }
 
