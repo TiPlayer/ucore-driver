@@ -8,6 +8,8 @@
 #include <memlayout.h>
 #include <sync.h>
 #include <kio.h>
+#include <trap.h>
+#include <irq.h>
 
 /* stupid I/O delay routine necessitated by historical PC design flaws */
 static void delay(void)
@@ -459,4 +461,23 @@ int cons_getc(void)
 	}
 	local_intr_restore(intr_flag);
 	return c;
+}
+
+int kbd_intr_func(int phy_vector, void* data) {
+  char c;
+  if (phy_vector == IRQ_OFFSET + IRQ_COM1 || phy_vector == IRQ_OFFSET + IRQ_KBD) {
+    c = cons_getc();
+    extern void dev_stdin_write(char c);
+    dev_stdin_write(c);
+    return INTR_MINE_AND_SUCCESS;
+  } else {
+    return INTR_MINE_AND_FAIL;
+  }
+}
+
+void register_kbd_irq() {
+  int logic_irq = default_get_logic_irq(KBD_INDEX);
+  register_intr_handler(logic_irq, kbd_intr_func, NULL, 0);
+  logic_irq = default_get_logic_irq(COM1_INDEX);
+  register_intr_handler(logic_irq, kbd_intr_func, NULL, 0);
 }

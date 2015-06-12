@@ -18,6 +18,8 @@
 #include <error.h>
 #include <kio.h>
 #include <mp.h>
+#include <irq.h>
+#include "trap.h"
 
 #define TICK_NUM 30
 
@@ -156,10 +158,13 @@ static int pgfault_handler(struct trapframe *tf)
 	return do_pgfault(mm, tf->tf_err, rcr2());
 }
 
-static void trap_dispatch(struct trapframe *tf)
-{
+static void trap_dispatch(struct trapframe *tf) {
+  int phy = tf->tf_trapno;
+  if (phy >= IRQ_OFFSET && phy != T_SYSCALL) {
+    external_irq_handler(tf->tf_trapno);
+    return;
+  }
 	char c;
-
 	int ret;
 	switch (tf->tf_trapno) {
 	case T_DEBUG:
@@ -210,8 +215,7 @@ static void trap_dispatch(struct trapframe *tf)
 	}
 }
 
-void trap(struct trapframe *tf)
-{
+void trap(struct trapframe *tf) {
 	// used for previous projects
 	if (current == NULL) {
 		trap_dispatch(tf);
@@ -232,6 +236,10 @@ void trap(struct trapframe *tf)
 			}
 		}
 	}
+}
+
+int x86_p2l_irq(int phy_vector) {
+  return phy_vector - IRQ_OFFSET;
 }
 
 int ucore_in_interrupt()

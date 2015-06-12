@@ -8,6 +8,8 @@
 #include <sem.h>
 #include <assert.h>
 #include <kio.h>
+#include <trap.h>
+#include <irq.h>
 
 #define ISA_DATA                0x00
 #define ISA_ERROR               0x01
@@ -88,8 +90,15 @@ static int ide_wait_ready(unsigned short iobase, bool check_error)
 	return 0;
 }
 
-void ide_init(void)
-{
+int ide_intr_func(int phy_vector, void* data) {
+  if (phy_vector == IRQ_OFFSET + IRQ_IDE1 || phy_vector == IRQ_OFFSET + IRQ_IDE2) {
+    return INTR_MINE_AND_SUCCESS;
+  } else {
+    return INTR_MINE_AND_FAIL;
+  }
+}
+
+void ide_init(void) {
 	static_assert((SECTSIZE % 4) == 0);
 	unsigned short ideno, iobase;
 	for (ideno = 0; ideno < MAX_IDE; ideno++) {
@@ -154,6 +163,9 @@ void ide_init(void)
 		kprintf("ide %d: %10u(sectors), '%s'.\n", ideno,
 			ide_devices[ideno].size, ide_devices[ideno].model);
 	}
+
+  register_intr_handler(default_get_logic_irq(IDE1_INDEX), ide_intr_func, NULL, 0);
+  register_intr_handler(default_get_logic_irq(IDE2_INDEX), ide_intr_func, NULL, 0);
 
 	// enable ide interrupt
 	pic_enable(IRQ_IDE1);
