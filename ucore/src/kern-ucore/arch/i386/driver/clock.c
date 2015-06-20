@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <picirq.h>
 #include <kio.h>
+#include <trap.h>
+#include <irq.h>
+#include <assert.h>
+#include <proc.h>
 
 /* *
  * Support for time-related hardware gadgets - the 8253 timer,
@@ -25,13 +29,24 @@
 #define TIMER_16BIT     0x30	// r/w counter 16 bits, LSB first
 
 volatile size_t ticks;
+extern void run_timer_list();
+
+int timer_intr_func(int phy_vector, void* data) {
+  if (phy_vector == IRQ_OFFSET + IRQ_TIMER) {
+    ticks++;
+    assert(current != NULL);
+    run_timer_list();
+    return INTR_MINE_AND_SUCCESS;
+  } else {
+    return INTR_MINE_AND_FAIL;
+  }
+}
 
 /* *
  * clock_init - initialize 8253 clock to interrupt 100 times per second,
  * and then enable IRQ_TIMER.
  * */
-void clock_init(void)
-{
+void clock_init(void) {
 	// set 8253 timer-chip
 	outb(TIMER_MODE, TIMER_SEL0 | TIMER_RATEGEN | TIMER_16BIT);
 	outb(IO_TIMER1, TIMER_DIV(100) % 256);
@@ -39,7 +54,7 @@ void clock_init(void)
 
 	// initialize time counter 'ticks' to zero
 	ticks = 0;
-
+  register_intr_handler(default_get_logic_irq(TIMER_INDEX), timer_intr_func, NULL, 0);
 	kprintf("++ setup timer interrupts\n");
 	pic_enable(IRQ_TIMER);
 }

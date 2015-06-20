@@ -17,6 +17,7 @@
 #include <arch_mp.h>
 #include <mod.h>
 #include <swap_manager.h>
+#include <irq.h>
 
 int kern_init(void) __attribute__ ((noreturn));
 
@@ -41,6 +42,8 @@ int kern_init(void)
   pic_init();		// init interrupt controller
 	idt_init();		// init interrupt descriptor table
 
+  irq_manager_init(x86_p2l_irq, NULL, NULL);
+  register_kbd_irq();
 	vmm_init();		// init virtual memory management
 	sched_init();		// init scheduler
 	proc_init();		// init process table
