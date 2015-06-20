@@ -44,7 +44,7 @@ int main() {
   		close(fd);
   		return 0;
 }
-```
+> >```
 > > 目前效果是cdev输出自己所得到的字符。
 > >  
 
