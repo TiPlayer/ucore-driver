@@ -62,27 +62,25 @@ int main() {
 > > 
 > > 1. 宏定义
 > > > 本方法是从OsTrain2012/DDE中学习来的，在引用某一个Header的时候情况如下
-> > >
-```cpp
+> > > ```cpp
 #define __NO_UCORE_TYPE__
 #include <device.h>
-```
+> > > ```
 > > > 然后在device.h中有类似于如下的定义:
-> > > 
-```cpp
+> > > ```cpp
 #ifdef __NO_UCORE_TYPE__
 struct ucore_device {
 #else 
 struct device {
 #endif
-```
+> > > ```
 > > > 这样就可以实现在不改变其他的源代码的情况下实现部分linux和ucore的融合。这种实现方式非常值得借鉴。然后OsTrain2012/DDE的部分代码还遗留在OsTrain2014/KernelModule中，所以我可以直接搬过来用。感觉非常好。
 > > 
 > > 2. Adapter框架
 > > > 为了实现kernel module的知识。进一步实现一些Linux kernal module所必需的支持函数。但是在实现支持函数的时候不能引用大量的ucore header，否则会有大量的命名冲突。所以在实现这些linux函数的时候要严格控制ucore的header 引用数量。  
 > > > 但有的时候为了实现需要我们无法避免要进行深度ucore header引用，为此我设计了一个新的架构，具体如下:
 > > > 
-```
+> > > ```
 -- LinuxAdapter
 |
 | - ucoreAdapter 
@@ -96,7 +94,7 @@ struct device {
 |
 | - include 
 |  (一个通过header-gen生成的linux-3.16 header组) 
-```
+> > > ```
 > >
 > > 3. 源代码修改
 > > > 即使使用了以上的技巧，还是由一些问题需要手动修改源代码解决。主要集中在以下两类
@@ -115,35 +113,32 @@ struct device {
 > > > > 比如如下情况
 > > > > 
 > > > > 在`include/asm/string_64.h`中有如下函数声明
-> > > > 
-```cpp
+> > > > ```cpp
 int memcmp(const void *cs, const void *ct, ssize_t count);
-```
+> > > > ```
 > > > > 但是在ucore中最后一个参数`count`的类型是`size_t`, 我在不改变原来参数的意义的情况下会让linux函数类型和ucore统一，即把`ssize_t`改为`size_t`
 > > > > 
 > > 4. 具体实现细节
 > > > 本工作基于OsTrain2014/KernelModule, 这个ucore_plus已经可以较好的支持linux模块的加载，经过我上述所说的header声明完善之后已经可以加载linux hello kmodule, 这个在`/kern-ucore/kmodule/modules/mod-hello/`找到. 为了可以在加载时在初始化函数的最后输出hello, 我们需要实现linux的输出函数`printk `, 具体实现方式可以在ucoreAdapter中找到，需要注意的一点是要在末尾处增加`EXPORT_SYMBOL(printk)`，否则会找不到符号。
 > > > 
 > > > 为了进一步支持一个简单的字符设备，需要实现以下参数:
-> > > 
-```cpp
+> > > ```cpp
 static struct char_device_struct * __register_chrdev_region(unsigned int major, unsigned int baseminor, int minorct, const char *name)
 int alloc_chrdev_region(dev_t * dev, unsigned int baseminor, unsigned int count, const char * name) 
 int cdev_add(struct cdev * cdev, dev_t dev, unsigned int count)
 void cdev_init(struct cdev * cdev, const struct file_operations * fops) 
 static struct char_device_struct * __unregister_chrdev_region(unsigned major, unsigned baseminor, int minorct) 
 void unregister_chrdev_region(dev_t from, unsigned int count
-```
+> > > ```
 > > > 具体实现可以在linuxFunctions中找到。我基本复制了linux的实现方式，并做了一些修改使得它可以在ucore上跑，用到的技巧主要是如下这种方式.
 > > > 
 > > > 因为在实现这些函数的时候需要涉及到linux::device和ucore::device, 但明显不可能同时在c这种没有命名空间的语言里完成这种工作。所以需要绕开。首先通过我上述所讲的方式在引用ucore header之前加入声明NO_UCORE_DEVICE，讲ucore::device改名为ucore_device. 然后在ucoreAdapter中实现了自己所需要用到的函数。之后在linuxFunctions中，首先通过extern的方式得到这个函数的声明。由于c的函数声明不需要参数，所以在这里我们可以直接改变extern声明时的参数类型，比如
-> > > 
-```cpp
+> > > ```cpp
 //原ucore中实现
 void addLinuxDevice(struct device* udev);
 //在linuxFunctions中的声明
 extern void addLinuxDevice(struct ucore_device* udev);
-```
+> > > ```
 通过这种方式我们就可以避免命名冲突同时可以区分ucore::device和linux::device。不过使用这种方式需要极其清晰的大脑，否则容易把自己绕进去。
 > > 
 > > 5. 设备IO的Adapter
@@ -153,13 +148,12 @@ extern void addLinuxDevice(struct ucore_device* udev);
 > > > 
 > > > 所有的cdev的IO Adapter可以在`kern-ucore/kmodule/linuxAdapter/linuxFunctions/cdev.c`中找到
 > > > 具体如下:
-> > > 
-```c
+> > > ```c
 int ucore_cdev_open_adapter(struct ucore_device * dev, uint32_t open_flags);
 int ucore_cdev_close_adapter (struct ucore_device * dev);
 int ucore_cdev_io_adapter (struct ucore_device * dev, struct ucore_iobuf * iob, bool write) ;
 int ucore_cdev_ioctl_adapter (struct ucore_device * dev, int op, void *data) {;
-```
+> > > ```
 
 ###下一步
 > 如果希望在这部分工作的基础上进行下一步完善，可以从以下几个方向入手
@@ -187,30 +181,30 @@ int ucore_cdev_ioctl_adapter (struct ucore_device * dev, int op, void *data) {;
 > 
 > 添加设备中断的函数如下:
 > 
-```c
+> ```c
 int register_intr_handler(int logic_no, if_t func, void* data, int solo);
-```
+> ```
 > 在添加中断处理函数的时候，首先要考虑这个中断处理函数是不是可以判断这个中断来自己自己的目标设备。因为有些设备是有中断寄存器的，比如lapic的timer，可是查询得到当前设备是不是发出了中断信号。对于这种中断函数他们不需要独占一个中断号。否则的话他们需要独占中毒号, 即solo=1. 我们在添加的时候，需要判断solo的值，如果是一的话则需要保证链表里对应中断号只有这一个处理程序，否则返回失败。
 > 
 > 逻辑中断号的获得是由另一个接口函数规定的:
 > 
-```c
+> ```c
 int default_get_logic_irq(int me);
-```
+> ```
 > 目前由于ucore没有PCI总线等必要的支持，无法动态的获得设备的逻辑中断号，所以这部分是写死的，工作原理就是一个switch-case, 我告诉你我是谁，你要告诉我我能使用的中断号是什么。如果之后PCI总线完善了，这个函数的参数或许会变化，但是实现的功能不变。
 > 
 > 这个框架的初始化函数如下:
 > 
-```c
+> ```c
 void irq_manager_init(int(*p2l_irq)(int), int (*get_logic_irq)(int), void (*eoi)());
-```
+> ```
 > 其中`p2l_irq`是平台相关的物理中断号到逻辑中断号的映射函数。`get_logic_irq`是设备获取自己的逻辑中断号的函数，和`default_get_logic_irq`地位相同。但是由于目前ucore没有对应的支持所以这个参数没有用。`eoi`是为某些中断处理设备准备的，比如lapic。 这些设备在处理完中断后需要发送eoi。但是目前ucore没有用lapic而是pic，所以`eoi`这个参数也没有使用。在x86平台上，这个函数调用后，当cpu得到一个大于等于32的物理中断号的时候，ucore不会再用原来的switch-case中断处理函数，而是会转到新的处理平台上。
 > 
 > 最后这个函数是给平台相关的中断处理程序用的，接受的参数是一个物理逻辑中断号
 > 
-```c
+> ```c
 void external_irq_handler(int vector);
-```
+> ```
 > 通过调用这个函数就可以处理相应的物理中断。
 
 ###下一步
