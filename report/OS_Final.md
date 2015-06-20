@@ -28,8 +28,7 @@ github: https://github.com/TiPlayer/ucore-driver
 > > 通过`insmod mod-demo`加载mod-demo这个kmodule, 这个module是一个名为chr_dev的字符设备，支持读和写操作。在加载时ucore将这个module加载进字符设备的hash列表中，在加载时得到主从设备号。但是由于ucore目前没有mknod所以这个主从设备号目前没有使用。在初始化的时候更重要的一步是新建一个`ucore::device`封装这个chr_dev, 把它放到vdev_list中。
 > 
 > 2. 一个样例用户程序如下，可以在`user-ucore/demo.c`找到
-> >
-```c
+> > ```c
 #define CHR_DEV_NAME "chr_dev:"
 int main() {
   		int ret;
